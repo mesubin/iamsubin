@@ -10,7 +10,7 @@ W = tf.Variable(2.9) #초기 w의 값 지정
 b = tf.Variable(0.5) #초기 b의 값 지정
 # W, b update
 learning_rate=0.01 #learning rate의 값을 0.01 로 지정 (학습 계수)
-for i in range(100+1): #학습을 101회 반복해서 진행 
+for i in range(100+1): #학습을 100회 반복해서 진행 
      with tf.GradientTape() as tape: # 알고리즘으로 gradient descent 경사 하강법을 사용, 자동 미분화, Tape내에 변수 (w.b)의 모든 연산을 레코드
             hypothesis = W * x_data + b #가설
             cost = tf.reduce_mean(tf.square(hypothesis - y_data)) # cost=가설과 실제값의 차이를 평균으로 함 
