@@ -1,0 +1,125 @@
+import tensorflow as tf #tensorflow를 불러와 tf로 지정
+import numpy as np #numpy(다차원 데이터 저장.배열연산)를 불러와np로 지정 
+tf.enable_eager_execution() #eager_execution을 활성화하여 즉시 실행
+
+tf.set_random_seed(0)  # for reproducibility # 랜덤 시드를 특정한 값으로 초기화 (다음에 실행할 때도 동일하게 실행되도록)
+
+# data and label
+x1 = [ 73.,  93.,  89.,  96.,  73.] #3개의 변수 x1,x2,x3지정
+x2 = [ 80.,  88.,  91.,  98.,  66.]
+x3 = [ 75.,  93.,  90., 100.,  70.]
+Y  = [152., 185., 180., 196., 142.] #3개의 변수의 예측값 (레이블/true value) 
+
+# random weights
+w1 = tf.Variable(tf.random_normal([1])) #3개의 변수에대한 3개의 w 초기값 설정
+w2 = tf.Variable(tf.random_normal([1]))
+w3 = tf.Variable(tf.random_normal([1]))
+b  = tf.Variable(tf.random_normal([1]))
+
+learning_rate = 0.000001 # learning rate값 지정(학습계수)
+
+for i in range(1000+1): #1001번 rate 업데이트 ( 반복해서 수행)
+    # tf.GradientTape() to record the gradient of the cost function 
+    with tf.GradientTape() as tape: #gradient tape을 사용해서 구현.변수들의 정보를 tape에 기록 
+        hypothesis = w1 * x1 +  w2 * x2 + w3 * x3 + b #가설함수 정의
+        cost = tf.reduce_mean(tf.square(hypothesis - Y))#cost함수 정의
+    # calculates the gradients of the cost
+    w1_grad, w2_grad, w3_grad, b_grad = tape.gradient(cost, [w1, w2, w3, b]) 
+    #변수들을 기록한 tape을 호출해서 w1,w2,w3의 기울기를 gradient값에 할당 w1_grad,w2_grad,w3_grad 에 지정
+    
+    # update w1,w2,w3 and b
+    w1.assign_sub(learning_rate * w1_grad) #위에서 할당한 값에 learning rate 값을 곱해서 업데이트
+    w2.assign_sub(learning_rate * w2_grad)
+    w3.assign_sub(learning_rate * w3_grad)
+    b.assign_sub(learning_rate * b_grad)
+
+    if i % 50 == 0: #50번에 1번씩 출력
+      print("{:5} | {:12.4f}".format(i, cost.numpy()))
+#결과
+    0 |   11325.9121
+   50 |     135.3618       #매우 큰 값으로 시작하여 일정 정도 수행하면 더 이상 크게 줄어들지 않음
+  100 |      11.1817
+  150 |       9.7940
+  200 |       9.7687
+  250 |       9.7587
+  300 |       9.7489
+  350 |       9.7389
+  400 |       9.7292
+  450 |       9.7194
+  500 |       9.7096
+  550 |       9.6999
+  600 |       9.6903
+  650 |       9.6806
+  700 |       9.6709
+  750 |       9.6612
+  800 |       9.6517
+  850 |       9.6421
+  900 |       9.6325
+  950 |       9.6229
+ 1000 |       9.6134
+
+#matrix사용  - 더 간결하게 
+data = np.array([
+    # X1,   X2,    X3,   y
+    [ 73.,  80.,  75., 152. ],   
+    [ 93.,  88.,  93., 185. ], # 주어진 전체 데이터 
+    [ 89.,  91.,  90., 180. ],
+    [ 96.,  98., 100., 196. ],
+    [ 73.,  66.,  70., 142. ]
+], dtype=np.float32)
+
+# slice data
+X = data[:, :-1] #numpy의 slicing 을 활용.x값 지정 .위 데이터의 전체 행과 마지막 열을 제외함 (,앞부분 행이고 뒷부분은 열)
+y = data[:, [-1]] #y 값 지정.전체 행과 마지막 열을 뜻함
+
+W = tf.Variable(tf.random_normal([3, 1])) #weight 값 , x의 행 갯수만큼 3, 출력 값 1개
+b = tf.Variable(tf.random_normal([1])) #bias 1 
+
+learning_rate = 0.000001 #learing late 지정 (학습 계수)
+
+# hypothesis, prediction function
+def predict(X): # 가설 함수 정의
+    return tf.matmul(X, W) + b 
+
+print("epoch | cost") #출력 
+
+#w와 b값 업데이트
+n_epochs = 2000 #2000번 반복 수행
+for i in range(n_epochs+1): # epoch= 1번 순회하는 것. 2001번 epoch 수행
+    # tf.GradientTape() to record the gradient of the cost function
+    with tf.GradientTape() as tape:  #gradient tape을 사용해서 구현.변수들의 정보를 tape에 기록 
+        cost = tf.reduce_mean((tf.square(predict(X) - y))) #cost함수 정의 
+
+    # calculates the gradients of the loss
+    W_grad, b_grad = tape.gradient(cost, [W, b])
+     #변수들을 기록한 tape을 호출해서 w1,w2,w3의 기울기를 gradient값에 할당 w1_grad,w2_grad,w3_grad 에 지정
+
+    # updates parameters (W and b)
+    W.assign_sub(learning_rate * W_grad)  #위에서 할당한 값에 learning rate 값을 곱해서 w,b값 업데이트
+    b.assign_sub(learning_rate * b_grad)
+    
+    if i % 100 == 0: #100번 중 1번 출력 
+        print("{:5} | {:10.4f}".format(i, cost.numpy()))
+#결과
+epoch | cost
+    0 |  5455.5903
+  100 |    31.7443
+  200 |    30.9326        #큰 값의 cost 에서 급속히 더이상 줄어들지 않
+  300 |    30.7894
+  400 |    30.6468
+  500 |    30.5055
+  600 |    30.3644
+  700 |    30.2242
+  800 |    30.0849
+  900 |    29.9463
+ 1000 |    29.8081
+ 1100 |    29.6710
+ 1200 |    29.5348
+ 1300 |    29.3989
+ 1400 |    29.2641
+ 1500 |    29.1299
+ 1600 |    28.9961
+ 1700 |    28.8634
+ 1800 |    28.7313
+ 1900 |    28.5997
+ 2000 |    28.4689
