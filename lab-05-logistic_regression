@@ -16,35 +16,39 @@ y_test =[[1.]]
 import tensorflow as tf #tensorflow를 불러와 tf로 지정
 import numpy as np #numpy(다차원 데이터 저장.배열연산)를 불러와np로 지정 
 tf.enable_eager_execution() #eager_execution을 활성화하여 즉시 실행
+tf.set_random_seed(777)# 랜덤 시드를 특정한 값으로 초기화 (다음에 실행할 때도 동일하게 실행되도록)
 dataset=tf.data.Dataset.form_tensor_slices((x_train,y_train)).batch(len(x_train))
 #tf data를 통해서 원하는 x값과 y값을 실제 x의 길이 만큼 뱃치로 학습 (x의 길이=6)
 
 w=tf.Variable(tr.zero([2,1]), name='weight') # 모델 선언 . w= 2행 1열 (x의 값 행렬 연산)
-b=tf.Variable(tf.zero([1]), name='bias' ) # bias 값으로 y의 값이 1개이므로 1로 정의
-
-def logistic_regression(features):
+b=tf.Variable(tf.zero([1]), name='bias' ) # bias 값으로 y의 값이 1개이므로 1로 할당
+#정의
+def logistic_regression(features): #logistic regrettion정의
     hypothesis=tf.div(1.,1.+tf.exp(tf.matmul(features,w)+b)) #가설 . logistic regression을 하기 위해 나온 값을 시그모이드함수를 이용함
-    return hypothesis #가설을 그려냄
-def loss_fn(features, labels): # 
-    hypothesis =logistic_regrassion(teatures)
+    return hypothesis #logistic regreession에 대한 가설을 그려냄
+def loss_fn(features, labels): # 가설로 나온 값을 라벨에  넣음 
+    hypothesis =logistic_regrassion(features) #피처값이 나오기 위해서 hypethesis 호출
     cost=-tf.reduce_mean(lavels*tf.log(loss_fn(hypothesis)+(1-labels)*tf.log(1-hypothesis))
-    return cost
-def grad(hypothesis, features, labels):
+   #실제 cost값 할당. 코스트 값을 라벨과 가설값을 통해서 구해냄 
+   return cost
+ #학습을 위한 함수
+def grad(hypothesis, features, labels):  #gradient descent optimizer로 가설값을 통해 실제 값 구함 
     with tf.GRadientTape() as tape:
-        loss_value = loss_fn(hypothesis,labels)
-    return tape.gradient(loss_value,[w,b])
-optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
-
-for step in range(EPOCHS):
-    for features, labels in tfe.Iterator(dataset):
-        grads= grad(logistic_regression(features), features, labels)
-        optimizer.apply_gradients(grads_and_vars=zip(grads,[w,b]))
-        if step %100==0:
+        loss_value = loss_fn(hypothesis,labels) #loss value할당 . 라벨값과 하이퍼시스값
+    return tape.gradient(loss_value,[w,b]) #gradient를 통해서 지정한 모델값을 업데이트
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01) #0.01의 학습계수로 학습하는 optimizer선언
+#eager모드 (루프를 돌면서 함수를 호출하는 형태)
+for step in range(EPOCHS): # EPOCH만큼 반복 
+    for features, labels in tfe.Iterator(dataset): #dataset 값을 토대로 Iterator을 돌려서 x값과 y값을 구함  
+        grads= grad(logistic_regression(features), features, labels) #나온 x값과 y값을 가설에 넣어서 학습을 위한 기울기를 구함 
+        optimizer.apply_gradients(grads_and_vars=zip(grads,[w,b])) # gradient값을 opimizer를 통해서 모델을 계속해서 업데이트하고 최소화 함 (최적의 값을 찾음)
+        if step %100==0: #100번 마다 Iteration 과 Loss값이 변하는걸 출력 
             print("Iter: {}, Loss:{:.4f}". format(step, loss_fn(logistic_regression(features),labels)))
-
-def accuracy_fn(hypothesis, labels):
-    predicted= tf.cast(hypothesis >0.5, dtype=tf.float32)
-    accuracy= tf.reduce_mean(tf.cast(tf.equl(predicted, labels),dtype=tf.int32))
-    return accuracy
+#test 
+def accuracy_fn(hypothesis, labels): #가설과 함수를 비교하기 위한 함수 선언 
+    predicted= tf.cast(hypothesis >0.5, dtype=tf.float32) 
+    #x값을 넣었을때 가설값(logistic function) 을 통해 나온 0 과 1 사이의 sigmoid 함수를 dicisionboundy값인 0.5를 통해 정확히 예측되도록 함 
+    accuracy= tf.reduce_mean(tf.cast(tf.equl(predicted, labels),dtype=tf.int32)) #실제 값과 예측값을 비교 
+    return accuracy 
     
-test_acc =accuracy_fn(logistic_regression(x_test),y_test)
+test_acc =accuracy_fn(logistic_regression(x_test),y_test) # x_test y_tests 값을 가설에 넣어서 정확한지 값 출력 
