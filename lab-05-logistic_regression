@@ -24,7 +24,7 @@ w=tf.Variable(tr.zero([2,1]), name='weight') # 모델 선언 . w= 2행 1열 (x�
 b=tf.Variable(tf.zero([1]), name='bias' ) # bias 값으로 y의 값이 1개이므로 1로 할당
 #정의
 def logistic_regression(features): #logistic regrettion정의
-    hypothesis=tf.div(1.,1.+tf.exp(tf.matmul(features,w)+b)) #가설 . logistic regression을 하기 위해 나온 값을 시그모이드함수를 이용함
+    hypothesis=tf.div(1.,1.+tf.exp(tf.matmul(features,w)+b)) #가설 . logistic regression을 하기 위해 나온 값을 sigmoid 함수를 이용함
     return hypothesis #logistic regreession에 대한 가설을 그려냄
 def loss_fn(features, labels): # 가설로 나온 값을 라벨에  넣음 
     hypothesis =logistic_regrassion(features) #피처값이 나오기 위해서 hypethesis 호출
@@ -33,22 +33,40 @@ def loss_fn(features, labels): # 가설로 나온 값을 라벨에  넣음
    return cost
  #학습을 위한 함수
 def grad(hypothesis, features, labels):  #gradient descent optimizer로 가설값을 통해 실제 값 구함 
-    with tf.GRadientTape() as tape:
+    with tf.GRadientTape() as tape:  #gradient tape을 사용해서 구현.변수들의 정보를 tape에 기록 
         loss_value = loss_fn(hypothesis,labels) #loss value할당 . 라벨값과 하이퍼시스값
     return tape.gradient(loss_value,[w,b]) #gradient를 통해서 지정한 모델값을 업데이트
 optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01) #0.01의 학습계수로 학습하는 optimizer선언
 #eager모드 (루프를 돌면서 함수를 호출하는 형태)
+EPOCHS = 1001 #EPOCHS 할당 
 for step in range(EPOCHS): # EPOCH만큼 반복 
     for features, labels in tfe.Iterator(dataset): #dataset 값을 토대로 Iterator을 돌려서 x값과 y값을 구함  
         grads= grad(logistic_regression(features), features, labels) #나온 x값과 y값을 가설에 넣어서 학습을 위한 기울기를 구함 
         optimizer.apply_gradients(grads_and_vars=zip(grads,[w,b])) # gradient값을 opimizer를 통해서 모델을 계속해서 업데이트하고 최소화 함 (최적의 값을 찾음)
         if step %100==0: #100번 마다 Iteration 과 Loss값이 변하는걸 출력 
             print("Iter: {}, Loss:{:.4f}". format(step, loss_fn(logistic_regression(features),labels)))
+
 #test 
 def accuracy_fn(hypothesis, labels): #가설과 함수를 비교하기 위한 함수 선언 
     predicted= tf.cast(hypothesis >0.5, dtype=tf.float32) 
-    #x값을 넣었을때 가설값(logistic function) 을 통해 나온 0 과 1 사이의 sigmoid 함수를 dicisionboundy값인 0.5를 통해 정확히 예측되도록 함 
+    #x값을 넣었을때 가설값(logistic function) 을 통해 나온 0 과 1 사이의 sigmoid 함수를 dicisionboundy값인 0.5를 통해 정확히 예측되도록 함
+      예측값이 0.5보다 크면 1을 반환하고 작으면 0을 반환함 
     accuracy= tf.reduce_mean(tf.cast(tf.equl(predicted, labels),dtype=tf.int32)) #실제 값과 예측값을 비교 
     return accuracy 
     
 test_acc =accuracy_fn(logistic_regression(x_test),y_test) # x_test y_tests 값을 가설에 넣어서 정확한지 값 출력 
+print("Test Accuracy: {:4f}", format(test_acc))
+
+#결과값 
+Iter: 0, Loss: 0.6874
+Iter: 100, Loss: 0.5776     #cost함수의 값이 점점 작아지면서 최소화 됨 
+Iter: 200, Loss: 0.5349
+Iter: 300, Loss: 0.5054
+Iter: 400, Loss: 0.4838
+Iter: 500, Loss: 0.4671
+Iter: 600, Loss: 0.4535
+Iter: 700, Loss: 0.4420
+Iter: 800, Loss: 0.4319
+Iter: 900, Loss: 0.4228
+Iter: 1000, Loss: 0.4144
+Testset Accuracy: 1.0000  #testset의 정확도 
